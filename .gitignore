@@ -1,0 +1,9 @@
+.idea
+.vscode
+*.exe
+*.o
+*.so
+*.class
+main
+tmp
+.air.toml

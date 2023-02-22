@@ -1,7 +1,6 @@
 package znet
 
 import (
-	"errors"
 	"fmt"
 	"github.com/lemoba/zinx/ziface"
 	"net"
@@ -17,19 +16,8 @@ type Server struct {
 	IP string
 	// 服务器监听端口
 	Port int
-}
-
-// 定义当前客户端所绑定的handle api
-// TODO 由用户自定义
-func CallBackToClient(conn *net.TCPConn, data []byte, cnt int) error {
-	// 回显业务
-	fmt.Println("[Conn Handle] CallbackToClient...")
-
-	if _, err := conn.Write(data[:cnt]); err != nil {
-		fmt.Println("handle wirte error", err)
-		return errors.New("CallBackToClient error")
-	}
-	return nil
+	// 给当前服务器添加router
+	Router ziface.IRouter
 }
 
 func (s *Server) Start() {
@@ -64,7 +52,7 @@ func (s *Server) Start() {
 			}
 
 			// 处理新链接的业务方法和conn进行绑定，得到连接模块
-			dealConn := NewConnection(conn, cid, CallBackToClient)
+			dealConn := NewConnection(conn, cid, s.Router)
 			cid++
 
 			// 启动当前的连接业务处理
@@ -88,6 +76,11 @@ func (s *Server) Serve() {
 	select {}
 }
 
+func (s *Server) AddRouter(router ziface.IRouter) {
+	s.Router = router
+	fmt.Println("Add Router Successful!")
+}
+
 /*
 初始化Server模块的方法
 */
@@ -97,6 +90,7 @@ func NewServer(name string) ziface.IServer {
 		IPVersion: "tcp4",
 		IP:        "0.0.0.0",
 		Port:      8999,
+		Router:    nil,
 	}
 	return s
 }

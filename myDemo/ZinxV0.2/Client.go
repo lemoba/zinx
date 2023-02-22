@@ -24,7 +24,7 @@ func main() {
 
 	for {
 		// 2. 链接调用write写数据
-		_, err := conn.Write([]byte("Hello Zinx V0.1"))
+		_, err := conn.Write([]byte("Hello Zinx V0.2"))
 		if err != nil {
 			fmt.Println("write conn error: ", err)
 			return

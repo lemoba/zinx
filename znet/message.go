@@ -6,11 +6,20 @@ type Message struct {
 	Data    []byte // 消息的内容
 }
 
+// 创建Message方法
+func NewMsgPackge(id uint32, data []byte) *Message {
+	return &Message{
+		Id:      id,
+		DataLen: uint32(len(data)),
+		Data:    data,
+	}
+}
+
 func (m *Message) GetMsgId() uint32 {
 	return m.Id
 }
 
-func (m *Message) GetDataLen() uint32 {
+func (m *Message) GetMsgLen() uint32 {
 	return m.DataLen
 }
 

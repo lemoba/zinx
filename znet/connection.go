@@ -19,8 +19,10 @@ type Connection struct {
 	ConnID uint32
 	// 当前连接的状态
 	isClosed bool
-	// 告知当前连接已经退出/停止的channel
+	// 告知当前连接已经退出/停止的channel(由Reader告知Writer退出)
 	ExitChan chan bool
+	// 无缓冲的管道，用于读、写goroutine之间的消息通信
+	msgChan chan []byte
 	// 消息的管理MsgID和对应的处理业务API的关系
 	MsgHandler ziface.IMsgHandler
 }
@@ -32,14 +34,15 @@ func NewConnection(conn *net.TCPConn, connID uint32, msgHandler ziface.IMsgHandl
 		ConnID:     connID,
 		MsgHandler: msgHandler,
 		isClosed:   false,
+		msgChan:    make(chan []byte),
 		ExitChan:   make(chan bool, 1),
 	}
 	return c
 }
 
 func (c *Connection) StartReader() {
-	fmt.Println("Reader Goroutine is running...")
-	defer fmt.Println("ConnID = ", c.ConnID, " Reader is exit, remote addr is ", c.RemoteAddr().String())
+	fmt.Println("[Reader Goroutine is running...]")
+	defer fmt.Println("ConnID = ", c.ConnID, " [Reader is exit!], remote addr is ", c.RemoteAddr().String())
 	defer c.Stop()
 
 	for {
@@ -86,6 +89,27 @@ func (c *Connection) StartReader() {
 	}
 }
 
+// 写消息的Goroutine, 专门发消息给客户端
+func (c *Connection) StartWriter() {
+	fmt.Println("[Writer Goroutine is running...]")
+	defer fmt.Println(c.RemoteAddr().String(), " [conn Writer exit!]")
+
+	// 不断地阻塞的等待channel的消息，进行写给客户端
+	for {
+		select {
+		case data := <-c.msgChan:
+			// 有数据要写给客户端
+			if _, err := c.Conn.Write(data); err != nil {
+				fmt.Println("Send data error: ", err)
+				return
+			}
+		case <-c.ExitChan:
+			// 代表Reader已经退出，此时Writer也要退出
+			return
+		}
+	}
+}
+
 // 将要发送给客户端的数据先封包再发送
 func (c *Connection) SendMsg(msgId uint32, data []byte) error {
 	if c.isClosed {
@@ -101,10 +125,8 @@ func (c *Connection) SendMsg(msgId uint32, data []byte) error {
 	}
 
 	// 将数据发送给客户端
-	if _, err := c.Conn.Write(binaryMsg); err != nil {
-		fmt.Println("Write msg id ", msgId, " error: ", err)
-		return errors.New("Conn Send error!")
-	}
+	c.msgChan <- binaryMsg
+
 	return nil
 }
 
@@ -114,7 +136,8 @@ func (c *Connection) Start() {
 	// 启动当前连接的读数据业务
 	go c.StartReader()
 
-	// TODO 启动当前连接的写数据业务
+	// 启动当前连接的写数据业务
+	go c.StartWriter()
 }
 
 func (c *Connection) Stop() {
@@ -129,7 +152,12 @@ func (c *Connection) Stop() {
 	// 关闭socket连接
 	c.Conn.Close()
 
+	// 告知Writer关闭
+	c.ExitChan <- true
+
+	// 回收资源
 	close(c.ExitChan)
+	close(c.msgChan)
 }
 
 func (c *Connection) GetTCPConnection() *net.TCPConn {

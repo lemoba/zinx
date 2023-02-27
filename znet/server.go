@@ -17,8 +17,8 @@ type Server struct {
 	IP string
 	// 服务器监听端口
 	Port int
-	// 给当前服务器添加router
-	Router ziface.IRouter
+	// 当前server的消息管理模块，用来绑定MsgID和对应的处理业务API关系
+	MsgHandler ziface.IMsgHandler
 }
 
 func (s *Server) Start() {
@@ -32,17 +32,17 @@ func (s *Server) Start() {
 		// 1. 获取一个TCP的Addr
 		addr, err := net.ResolveTCPAddr(s.IPVersion, fmt.Sprintf("%s:%d", s.IP, s.Port))
 		if err != nil {
-			fmt.Println("resolve tcp addr error: ", err)
+			fmt.Println("Resolve tcp addr error: ", err)
 			return
 		}
 		// 2. 监听服务器地址
 		listener, err := net.ListenTCP(s.IPVersion, addr)
 
 		if err != nil {
-			fmt.Println("listen ", s.IPVersion, " err ", err)
+			fmt.Println("Listen ", s.IPVersion, " err ", err)
 			return
 		}
-		fmt.Println("start Zinx server successful,", s.Name, "successful Listening...")
+		fmt.Println("Start Zinx server successful,", s.Name, "successful listening...")
 
 		var cid uint32
 		cid = 0
@@ -57,7 +57,7 @@ func (s *Server) Start() {
 			}
 
 			// 处理新链接的业务方法和conn进行绑定，得到连接模块
-			dealConn := NewConnection(conn, cid, s.Router)
+			dealConn := NewConnection(conn, cid, s.MsgHandler)
 			cid++
 
 			// 启动当前的连接业务处理
@@ -81,8 +81,8 @@ func (s *Server) Serve() {
 	select {}
 }
 
-func (s *Server) AddRouter(router ziface.IRouter) {
-	s.Router = router
+func (s *Server) AddRouter(msgID uint32, router ziface.IRouter) {
+	s.MsgHandler.AddRouter(msgID, router)
 	fmt.Println("Add Router Successful!")
 }
 
@@ -91,11 +91,11 @@ func (s *Server) AddRouter(router ziface.IRouter) {
 */
 func NewServer(name string) ziface.IServer {
 	s := &Server{
-		Name:      utils.GlobalObject.Name,
-		IPVersion: "tcp4",
-		IP:        utils.GlobalObject.Host,
-		Port:      utils.GlobalObject.TcpPort,
-		Router:    nil,
+		Name:       utils.GlobalObject.Name,
+		IPVersion:  "tcp4",
+		IP:         utils.GlobalObject.Host,
+		Port:       utils.GlobalObject.TcpPort,
+		MsgHandler: NewMsgHandle(),
 	}
 	return s
 }

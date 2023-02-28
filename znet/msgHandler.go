@@ -15,7 +15,7 @@ type MsgHandle struct {
 	Apis map[uint32]ziface.IRouter
 	// 负责Worker取任务的消息队列
 	TaskQueue []chan ziface.IRequest
-	// 业务工作Woker Pool的worker数量
+	// 业务工作Woker-Pool的worker数量
 	WorkerPoolSize uint32
 }
 
@@ -60,18 +60,17 @@ func (mh *MsgHandle) StartWorkerPool() {
 		// 1. 当前的worker对应的channel消息队列开辟空间 第0个worker使用第0个channel ...
 		mh.TaskQueue[i] = make(chan ziface.IRequest, utils.GlobalObject.MaxWorkerTaskLen)
 		// 2. 启动当前的Worker，阻塞等待消息从channel传递进来
-		go mh.startOneWorker(i, mh.TaskQueue[i])
+		go mh.StartOneWorker(i, mh.TaskQueue[i])
 	}
 }
 
 // 启动一个Worker工作流程
-func (mh *MsgHandle) startOneWorker(workerID int, taskQueue chan ziface.IRequest) {
+func (mh *MsgHandle) StartOneWorker(workerID int, taskQueue chan ziface.IRequest) {
 	fmt.Println("Worker ID = ", workerID, " is started...")
 
 	// 不断的阻塞等待对应消息队列的消息
 	for {
 		select {
-		// 如果有消息过来
 		case request := <-taskQueue:
 			mh.DoMsgHandler(request)
 		}

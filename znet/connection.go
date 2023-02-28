@@ -171,7 +171,7 @@ func (c *Connection) GetTCPConnection() *net.TCPConn {
 }
 
 func (c *Connection) GetConnID() uint32 {
-	return c.GetConnID()
+	return c.ConnID
 }
 
 func (c *Connection) RemoteAddr() net.Addr {

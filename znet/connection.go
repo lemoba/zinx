@@ -144,12 +144,13 @@ func (c *Connection) SendMsg(msgId uint32, data []byte) error {
 
 func (c *Connection) Start() {
 	fmt.Println("Connection Start... ConnID = ", c.ConnID)
-
 	// 启动当前连接的读数据业务
 	go c.StartReader()
-
 	// 启动当前连接的写数据业务
 	go c.StartWriter()
+
+	// 按照开发者传递进来的，创建连接之后需要调用的处理业务，执行对应的Hook函数
+	c.TcpServer.CallOnConnStart(c)
 }
 
 func (c *Connection) Stop() {
@@ -160,6 +161,9 @@ func (c *Connection) Stop() {
 	}
 
 	c.isClosed = true
+
+	// 调用开发者注册的，销毁连接之前 需要执行的业务Hook函数
+	c.TcpServer.CallOnConnStop(c)
 
 	// 关闭socket连接
 	c.Conn.Close()

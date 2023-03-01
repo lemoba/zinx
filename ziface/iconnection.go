@@ -22,6 +22,13 @@ type IConnection interface {
 
 	// 将解包后的数据发送给客户端
 	SendMsg(msgId uint32, data []byte) error
+
+	// 设置连接属性
+	SetProperty(key string, value interface{})
+	// 获取连接属性
+	GetPropery(key string) (interface{}, error)
+	// 移除连接属性
+	RemovePropery(key string)
 }
 
 // 定义一个处理连接业务的方法

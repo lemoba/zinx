@@ -7,6 +7,7 @@ import (
 	"github.com/lemoba/zinx/ziface"
 	"io"
 	"net"
+	"sync"
 )
 
 /*
@@ -28,6 +29,11 @@ type Connection struct {
 	msgChan chan []byte
 	// 消息的管理MsgID和对应的处理业务API的关系
 	MsgHandler ziface.IMsgHandler
+
+	// 连接属性集合
+	property map[string]interface{}
+	// 保护连接属性读写锁
+	propertyLock sync.RWMutex
 }
 
 // 初始化连接模块的方法
@@ -188,4 +194,28 @@ func (c *Connection) GetConnID() uint32 {
 
 func (c *Connection) RemoteAddr() net.Addr {
 	return c.Conn.RemoteAddr()
+}
+
+func (c *Connection) SetProperty(key string, value interface{}) {
+	c.propertyLock.Lock()
+	defer c.propertyLock.Unlock()
+
+	c.property[key] = value
+}
+
+func (c *Connection) GetPropery(key string) (interface{}, error) {
+	c.propertyLock.RLock()
+	defer c.propertyLock.RUnlock()
+
+	if value, ok := c.property[key]; ok {
+		return value, nil
+	}
+	return nil, errors.New("not propery[" + key + "] found")
+}
+
+func (c *Connection) RemovePropery(key string) {
+	c.propertyLock.Lock()
+	defer c.propertyLock.Unlock()
+
+	delete(c.property, key)
 }

@@ -46,16 +46,31 @@ func DoConnectionBegin(conn ziface.IConnection) {
 	if err := conn.SendMsg(202, []byte("DoConnection BEGIN")); err != nil {
 		fmt.Println(err)
 	}
+
+	// 设置连接属性
+	fmt.Println("Set some properies...")
+	conn.SetProperty("Name", "ranen!")
+	conn.SetProperty("Tips", "let's go!")
 }
 
 // 创建连接销毁之前的钩子函数
 func DoDestroyBefore(conn ziface.IConnection) {
 	fmt.Println("====> DoDestroyBefore is Called...")
 	fmt.Println("conn ID = ", conn.GetConnID(), " is Destory...")
+
+	// 设置连接属性
+	fmt.Println("Get some properies...")
+	if name, err := conn.GetProperty("Name"); err == nil {
+		fmt.Println(name)
+	}
+
+	if tip, err := conn.GetProperty("Tips"); err == nil {
+		fmt.Println(tip)
+	}
 }
 func main() {
 	// 1. 创建一个server句柄， 使用Zinx的api
-	s := znet.NewServer("[zinx V0.9]")
+	s := znet.NewServer("[zinx V0.10]")
 
 	// 2. 注册连接hook钩子函数
 	s.SetOnConnStart(DoConnectionBegin)

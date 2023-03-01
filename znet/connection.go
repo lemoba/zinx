@@ -46,6 +46,7 @@ func NewConnection(server ziface.IServer, conn *net.TCPConn, connID uint32, msgH
 		isClosed:   false,
 		msgChan:    make(chan []byte),
 		ExitChan:   make(chan bool, 1),
+		property:   make(map[string]interface{}),
 	}
 
 	// 将conn加入到ConnManager中
@@ -203,7 +204,7 @@ func (c *Connection) SetProperty(key string, value interface{}) {
 	c.property[key] = value
 }
 
-func (c *Connection) GetPropery(key string) (interface{}, error) {
+func (c *Connection) GetProperty(key string) (interface{}, error) {
 	c.propertyLock.RLock()
 	defer c.propertyLock.RUnlock()
 
@@ -213,7 +214,7 @@ func (c *Connection) GetPropery(key string) (interface{}, error) {
 	return nil, errors.New("not propery[" + key + "] found")
 }
 
-func (c *Connection) RemovePropery(key string) {
+func (c *Connection) RemoveProperty(key string) {
 	c.propertyLock.Lock()
 	defer c.propertyLock.Unlock()
 

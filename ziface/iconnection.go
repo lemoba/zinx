@@ -26,9 +26,9 @@ type IConnection interface {
 	// 设置连接属性
 	SetProperty(key string, value interface{})
 	// 获取连接属性
-	GetPropery(key string) (interface{}, error)
+	GetProperty(key string) (interface{}, error)
 	// 移除连接属性
-	RemovePropery(key string)
+	RemoveProperty(key string)
 }
 
 // 定义一个处理连接业务的方法

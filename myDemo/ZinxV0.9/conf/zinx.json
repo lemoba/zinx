@@ -1,9 +1,0 @@
-{
-  "Name": "Zinx v0.9 Server",
-  "Host": "127.0.0.1",
-  "TcpPort": 8999,
-  "MaxConn": 14,
-  "Version": "V0.9",
-  "WorkerPoolSize":   5,
-  "MaxWorkerTaskLen": 10
-}
